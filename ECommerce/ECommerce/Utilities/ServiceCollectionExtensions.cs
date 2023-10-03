@@ -7,6 +7,7 @@ namespace ECommerce.Utilities
         public static IServiceCollection RegisterServices(this IServiceCollection services)
         {
             services.AddScoped<OrdersService>();
+            services.AddScoped<ECommerceRepo>();
 
             return services;
         }

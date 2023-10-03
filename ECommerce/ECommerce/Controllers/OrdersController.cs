@@ -1,31 +1,57 @@
-using ECommerce.Contracts;
+using ECommerce.Models;
 using ECommerce.Services;
-using ECommerce.Utilities.Mappers;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Formatter;
+using Microsoft.AspNetCore.OData.Query;
+using Microsoft.AspNetCore.OData.Results;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace ECommerce.Controllers
 {
     [ApiController]
-    [Route("orders")]
+    [Route("odata/orders")]
     public class OrdersController : ControllerBase
     {
         private readonly ILogger<OrdersController> _logger;
         private readonly OrdersService ordersService;
+        private readonly ECommerceRepo repo;
 
         public OrdersController(
             ILogger<OrdersController> logger,
-            OrdersService ordersService)
+            OrdersService ordersService,
+            ECommerceRepo repo)
         {
             _logger = logger;
             this.ordersService = ordersService;
+            this.repo = repo;
         }
 
-        [HttpPost(Name = "create")]
-        public async Task<Response<Order>> Create(Order newOrder)
+        [EnableQuery(PageSize = 3)]
+        [HttpGet]
+        public IQueryable<Order> Get()
         {
-            var order = (await this.ordersService.CreateOrderAsync(newOrder.ToDto())).ToContract();
+            return this.repo.GetAll();
+        }
 
-           return new Response<Order> { Message = ResponseConstants.OrderCreatedSuccessfullyMessage, StatusCode = 200, Value = order };
+
+        [EnableQuery]
+        [HttpGet("{id}")]
+        public SingleResult<Order> Get([FromODataUri] Guid key)
+        {
+            return SingleResult.Create(this.repo.GetById(key));
+        }
+
+        [HttpPost]
+        public IActionResult Post([FromBody] Contracts.Order order)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var orderResponse = this.ordersService.CreateOrderAsync(order);
+
+            return Created("companies", orderResponse);
         }
     }
 }

@@ -11,14 +11,13 @@ namespace ECommerce.Models
     public class Order
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; } 
+        public Guid Id { get; set; } 
 
         public Customer Customer { get; set; }
 
         public int CustomerId { get; set; }
 
-        public DateTime OrderDate { get; set; }
+        public DateTimeOffset OrderDate { get; set; }
 
         public OrderStatus Status { get; set; }
 

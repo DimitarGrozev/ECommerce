@@ -14,7 +14,7 @@ namespace ECommerce.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        public int ProductId { get; set; }
+        public int SKU { get; set; }
 
         public string Name { get; set; }
 

@@ -45,18 +45,19 @@ namespace ECommerce.Services
             return await this.dbContext.SaveChangesAsync() == 1;
         }
 
-        public async Task<OrderDTO> CreateOrderAsync(OrderDTO newOrder)
+        public async Task<Response<OrderDTO>> CreateOrderAsync(OrderDTO newOrder)
         {
             //Validate order, payment, etc
             var customer = await this.dbContext.Customers.FirstOrDefaultAsync(customer => customer.Id == newOrder.CustomerId);
-            var products = await this.dbContext.Products.Where(product => newOrder.OrderItems.Select(item => item.ProductId).Contains(product.Id)).ToListAsync();
+            //var products = await this.dbContext.Products.Where(product => newOrder.OrderItems.Select(item => item.ProductId).Contains(product.Id)).ToListAsync();
 
             foreach (var requestedProduct in newOrder.OrderItems.Select(item => (Id: item.ProductId, Quantity: item.Quantity)))
             {
                 var productStockCount = await this.dbContext.Products.Where(product => product.ProductId == requestedProduct.Id).CountAsync();
                 
-                if (productStockCount! > requestedProduct.Quantity)
+                if (productStockCount !> requestedProduct.Quantity)
                 {
+                    return new Response<OrderDTO> { Message = }
                 }
             }
             var order = await this.dbContext.Orders.AddAsync(new Order());
