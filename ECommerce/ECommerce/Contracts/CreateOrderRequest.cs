@@ -2,12 +2,12 @@
 
 namespace ECommerce.Contracts
 {
-    public class Order
+    public class CreateOrderRequest
     {
         [Required]
         public int CustomerId { get; set; }
 
         [Required]
-        public List<OrderItem> OrderItems { get; set; }
+        public List<OrderItemRequest> OrderItems { get; set; }
     }
 }

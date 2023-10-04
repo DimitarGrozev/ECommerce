@@ -1,4 +1,7 @@
-﻿using ECommerce.Services;
+﻿using ECommerce.Data;
+using ECommerce.Services;
+using Microsoft.AspNetCore.OData.Formatter;
+using Microsoft.Net.Http.Headers;
 
 namespace ECommerce.Utilities
 {
@@ -8,8 +11,25 @@ namespace ECommerce.Utilities
         {
             services.AddScoped<OrdersService>();
             services.AddScoped<ECommerceRepo>();
+            services.AddScoped<DbSeeder>();
 
             return services;
         }
+
+        public static void AddODataFormatters(this IServiceCollection services)
+        {
+            services.AddMvcCore(options =>
+            {
+                foreach (var outputFormatter in options.OutputFormatters.OfType<ODataOutputFormatter>().Where(_ => _.SupportedMediaTypes.Count == 0))
+                {
+                    outputFormatter.SupportedMediaTypes.Add(new MediaTypeHeaderValue("application/prs.odatatestxx-odata"));
+                }
+                foreach (var inputFormatter in options.InputFormatters.OfType<ODataInputFormatter>().Where(_ => _.SupportedMediaTypes.Count == 0))
+                {
+                    inputFormatter.SupportedMediaTypes.Add(new MediaTypeHeaderValue("application/prs.odatatestxx-odata"));
+                }
+            });
+        }
+
     }
 }

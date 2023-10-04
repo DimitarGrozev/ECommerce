@@ -21,6 +21,6 @@ namespace ECommerce.Models
 
         public OrderStatus Status { get; set; }
 
-        public List<OrderItem> OrderItems { get; set; }
+        public IList<OrderItem> OrderItems { get; set; }
     }
 }

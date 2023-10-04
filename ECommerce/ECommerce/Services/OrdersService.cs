@@ -14,66 +14,65 @@ namespace ECommerce.Services
             this.dbContext = dbContext;
         }
 
-        //public async Task<bool> SetOrderStatus(int orderId, OrderStatus orderStatus)
-        //{
-        //    var order = await this.dbContext.Orders
-        //            .Where(order => order.Id == orderId)
-        //            .FirstOrDefaultAsync();
-
-        //    if (order == null)
-        //    {
-        //        return false;
-        //    }
-
-        //    order.Status = orderStatus;
-
-        //    return await this.dbContext.SaveChangesAsync() == 1;
-        //}
-
-        public async Task<Response<Models.Order>> CreateOrderAsync(Contracts.Order newOrder)
+        public async Task<Response<Models.Order>> CreateOrderAsync(Contracts.CreateOrderRequest newOrder)
         {
-            //Validate order, payment, etc
             var customer = await this.dbContext.Customers.FirstOrDefaultAsync(customer => customer.Id == newOrder.CustomerId);
 
             if (customer == null)
             {
-                return new Response<Models.Order> { StatusCode = 401, Message = "Customer details could not be found."};
+                return new Response<Models.Order> { Message = ResponseConstants.CustomerDetailsNotFoundMessage };
             }
 
-            var order = new Models.Order
+            var order = this.CreateNewOrder(customer);
+            var orderItemCreationResult = await this.TryCreateOrderItems(newOrder);
+
+            if (!string.IsNullOrEmpty(orderItemCreationResult.ErrorMessage))
             {
-                Id = Guid.NewGuid(),
+                return new Response<Models.Order> { Message = orderItemCreationResult.ErrorMessage };
+            }
+
+            order.OrderItems = orderItemCreationResult.OrderItems;
+
+            await this.dbContext.Orders.AddAsync(order);
+            await this.dbContext.SaveChangesAsync();
+
+            return new Response<Models.Order> { IsSuccessful = true, Message = ResponseConstants.OrderCreatedMessage, Value = order };
+        }
+
+        private Models.Order CreateNewOrder(Customer customer)
+        {
+            return new Models.Order
+            {
                 CustomerId = customer.Id,
                 OrderDate = DateTimeOffset.Now,
                 Status = OrderStatus.New
             };
+        }
 
-            await this.dbContext.AddAsync(order);
-
+        private async Task<(List<Models.OrderItem> OrderItems, string ErrorMessage)> TryCreateOrderItems(Contracts.CreateOrderRequest newOrder)
+        {
             var items = new List<Models.OrderItem>();
-            var productsToRemove = new List<Models.Product>();
 
             foreach (var requestedProduct in newOrder.OrderItems.Select(item => (Id: item.ProductId, Quantity: item.Quantity)))
             {
-                var productStockCount = await this.dbContext.Products.Where(product => product.SKU == requestedProduct.Id).CountAsync();
-                
-                if (productStockCount < requestedProduct.Quantity)
+                var productInStock = await this.dbContext.Products.FirstOrDefaultAsync(product => product.Id == requestedProduct.Id);
+
+                if (productInStock == null)
                 {
-                    return new Response<Models.Order> { StatusCode = 400, Message = $"Order for item with ID:{requestedProduct.Id} cannot be completed due to insufficient stock." };
+                    return (new List<Models.OrderItem>(), string.Format(ResponseConstants.ProductUnavailableMessage, requestedProduct.Id));
                 }
 
-                var products = await this.dbContext.Products.Where(product => product.SKU == requestedProduct.Id).Take(requestedProduct.Quantity).ToListAsync();
+                if (productInStock.Quantity < requestedProduct.Quantity)
+                {
+                    return (new List<Models.OrderItem>(), string.Format(ResponseConstants.InsufficientStockForProductMessage, requestedProduct.Id));
+                }
 
-                items.Add(new Models.OrderItem { ItemPrice = products[0].Price, OrderId = order.Id, ProductId = products[0].SKU, Quantity = requestedProduct.Quantity });
-                productsToRemove.AddRange(products);
+                productInStock.Quantity -= requestedProduct.Quantity;
+
+                items.Add(new Models.OrderItem { ItemPrice = productInStock.Price, ProductId = productInStock.Id, Quantity = requestedProduct.Quantity });
             }
 
-            await this.dbContext.OrderItems.AddRangeAsync(items);
-            this.dbContext.RemoveRange(productsToRemove);
-
-            await this.dbContext.SaveChangesAsync();
-
-            return new Response<Models.Order> { Message = "Order created", StatusCode = 201, Value = order };
+            return (items, string.Empty);
         }
     }
 }

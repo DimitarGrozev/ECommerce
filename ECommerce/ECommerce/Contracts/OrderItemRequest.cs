@@ -1,6 +1,6 @@
 ﻿namespace ECommerce.Contracts
 {
-    public class OrderItem
+    public class OrderItemRequest
     {
         public int ProductId { get; set; }
 

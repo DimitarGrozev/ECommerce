@@ -1,15 +1,14 @@
-using ECommerce.Models;
+using ECommerce.Contracts;
 using ECommerce.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Results;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace ECommerce.Controllers
 {
     [ApiController]
-    [Route("odata/orders")]
+    [Route("api/orders")]
     public class OrdersController : ControllerBase
     {
         private readonly ILogger<OrdersController> _logger;
@@ -26,32 +25,29 @@ namespace ECommerce.Controllers
             this.repo = repo;
         }
 
-        [EnableQuery(PageSize = 3)]
+        [EnableQuery]
         [HttpGet]
-        public IQueryable<Order> Get()
+        public IQueryable<Models.Order> Get()
         {
             return this.repo.GetAll();
         }
 
-
-        [EnableQuery]
-        [HttpGet("{id}")]
-        public SingleResult<Order> Get([FromODataUri] Guid key)
-        {
-            return SingleResult.Create(this.repo.GetById(key));
-        }
-
         [HttpPost]
-        public IActionResult Post([FromBody] Contracts.Order order)
+        public async Task<ActionResult<Response<Models.Order>>> Post([FromBody] CreateOrderRequest order)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var orderResponse = this.ordersService.CreateOrderAsync(order);
+            var orderResponse = await this.ordersService.CreateOrderAsync(order);
 
-            return Created("companies", orderResponse);
+            if (!orderResponse.IsSuccessful)
+            {
+                return BadRequest(orderResponse);
+            }
+
+            return Created($"api/orders/{orderResponse.Value.Id}", orderResponse);
         }
     }
 }

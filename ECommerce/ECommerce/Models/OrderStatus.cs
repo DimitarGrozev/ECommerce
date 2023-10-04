@@ -9,7 +9,7 @@ namespace ECommerce.Models
     public enum OrderStatus
     {
         New,
-        Pending,
+        Processing,
         Shipped,
         Delivered,
         Cancelled,

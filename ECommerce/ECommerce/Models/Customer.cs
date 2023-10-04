@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 
 namespace ECommerce.Models
 {
@@ -27,6 +23,7 @@ namespace ECommerce.Models
         [RegularExpression(@"^[A-Za-z\s]+,\s\d{5}\s\d+,\s[A-Za-z\s]+$")]
         public string Address { get; set; }
 
+        [JsonIgnore]
         public ICollection<Order> Orders { get; set; }
     }
 }

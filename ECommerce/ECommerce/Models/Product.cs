@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ECommerce.Models
 {
@@ -14,13 +9,13 @@ namespace ECommerce.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        public int SKU { get; set; }
-
         public string Name { get; set; }
 
         public string Description { get; set; }
 
         public decimal Price { get; set; }
+
+        public int Quantity { get; set; }
 
         public ICollection<OrderItem> OrderItems { get; set; }
     }

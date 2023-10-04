@@ -6,46 +6,59 @@ using Microsoft.AspNetCore.OData.Extensions;
 using Microsoft.AspNetCore.OData;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using ECommerce.Models;
+using System.Text.Json.Serialization;
+using ECommerce.Configuration;
+using Microsoft.AspNetCore.OData.Formatter;
+using Microsoft.Net.Http.Headers;
 
 namespace ECommerce
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public async static Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddDbContext<ECommerceDbContext>(opt =>
-                opt.UseInMemoryDatabase("ECommerceDb"));
+                opt.UseSqlServer(builder.Configuration.GetConnectionString("Database")));
 
             builder.Services.RegisterServices();
 
             builder.Services.AddControllers()
                 .AddOData(options => options
-                    .AddRouteComponents("api", GetEdmModel())
                     .Select()
                     .Filter()
                     .OrderBy()
-                    .SetMaxTop(20)
                     .Count()
                     .Expand()
-                );
+                )
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+                    options.JsonSerializerOptions.WriteIndented = true;
+                });
+
+            builder.Services.Configure<ScheduledOrderProcessorConfig>(builder.Configuration.GetSection("ScheduledOrderProcessorConfig"));
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            builder.Services.AddODataQueryFilter();
-
+            builder.Services.AddODataFormatters();
 
             builder.Services.AddHostedService<ScheduledOrderProcessor>();
 
             var app = builder.Build();
 
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+            using var scope = app.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetService<ECommerceDbContext>();
+
+            await dbContext.Database.EnsureCreatedAsync();
+            await dbContext.Database.MigrateAsync();
+
+            var dbSeeder = scope.ServiceProvider.GetService<DbSeeder>();
+            await dbSeeder.SeedData();
+
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
             app.UseHttpsRedirection();
 

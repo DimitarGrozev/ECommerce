@@ -18,7 +18,7 @@ namespace ECommerce.Services
         public IQueryable<Order> GetAll()
         {
             return _context.Orders
-                    //.Include(order => order.OrderItems)
+                    .Include(order => order.OrderItems)
                         .AsQueryable();
         }
 
