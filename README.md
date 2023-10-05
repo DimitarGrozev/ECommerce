@@ -30,7 +30,7 @@ The .NET e-commerce shop is a modern and robust online shopping platform designe
 
 - **Application Insights**: Application Insights is used for monitoring and gaining insights into the performance and usage of the e-commerce platform. It helps identify issues, troubleshoot bottlenecks, and optimize the system.
 
--- **Virtual Network**: An Azure Virtual network to secure the communication between the different service
+- **Virtual Network**: An Azure Virtual network to secure the communication between the different service
 
 
 > The app in this repo is a mix between the ECommerce Backend App Service, the Order function and the Admin Panel App Service as it provides the ability to create and read orders, but it also has a Background service which simulates the processing and shipping of orders. The API is OData enabled, which provides it with great querying power for complex scenarios, which are often required in admin panels. 
